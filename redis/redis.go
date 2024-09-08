@@ -14,7 +14,6 @@ const (
 	maxRetries     = 5                // Maximum number of retries before giving up
 	initialBackoff = 2 * time.Second  // Initial delay before retrying
 	maxBackoff     = 30 * time.Second // Maximum delay between retries
-	redisSetName   = "vehicles_parked"
 )
 
 // RedisClient is a wrapper around the redis.Client to hold the instance
@@ -58,7 +57,7 @@ func GetRedisClient(addr string, pword string, database int) (*RedisClient, erro
 
 }
 
-func (r *RedisClient) IsSetNotEmpty() (bool, error) {
+func (r *RedisClient) IsSetNotEmpty(redisSetName string) (bool, error) {
 	// Use the SCARD command to get the number of members in the set
 	ctx := context.Background()
 	card, err := r.Client.SCard(ctx, redisSetName).Result()
@@ -72,37 +71,34 @@ func (r *RedisClient) IsSetNotEmpty() (bool, error) {
 	return card > 0, nil
 }
 
-// AddVehicleEntry adds a vehicle entry to the Redis list of vehicles that have entered but not exited
-func (r *RedisClient) AddVehicleEntry(vehiclePlate string) error {
+func (r *RedisClient) AddItemToSet(item string, redisSetName string) error {
 	ctx := context.Background()
-	_, err := r.Client.SAdd(ctx, redisSetName, vehiclePlate).Result()
+	_, err := r.Client.SAdd(ctx, redisSetName, item).Result()
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to add vehicle entry to Redis")
+		logger.Log.Error().Err(err).Msg("Failed to make entry to Redis Set")
 		return err
 	}
-	logger.Log.Debug().Msgf("Vehicle %s added to Redis", vehiclePlate)
+	logger.Log.Debug().Msgf(" %s added to Redis Set %s", item, redisSetName)
 	return nil
 }
 
-// RemoveVehicleEntry removes a vehicle entry from the Redis list of vehicles that have entered
-func (r *RedisClient) RemoveVehicleEntry(vehiclePlate string) error {
+func (r *RedisClient) RemoveItemFromSet(item string, redisSetName string) error {
 	ctx := context.Background()
-	_, err := r.Client.SRem(ctx, redisSetName, vehiclePlate).Result()
+	_, err := r.Client.SRem(ctx, redisSetName, item).Result()
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to remove vehicle entry from Redis")
+		logger.Log.Error().Err(err).Msg("Failed to remove entry from Redis Set")
 		return err
 	}
-	logger.Log.Debug().Msgf("Vehicle %s removed from Redis", vehiclePlate)
+	logger.Log.Debug().Msgf("%s removed from Redis Set %s", item, redisSetName)
 	return nil
 }
 
-// GetRandomVehiclePlate retrieves a random vehicle plate from a Redis set
-func (r *RedisClient) GetRandomVehiclePlateFromParkedSet() (string, error) {
+func (r *RedisClient) GetRandomItemFromSet(redisSetName string) (string, error) {
 	// Use SRANDMEMBER to get a random member from the set
 	ctx := context.Background()
-	plate, err := r.Client.SRandMember(ctx, redisSetName).Result()
+	item, err := r.Client.SRandMember(ctx, redisSetName).Result()
 	if err != nil {
 		return "", fmt.Errorf("could not get random member from set: %w", err)
 	}
-	return plate, nil
+	return item, nil
 }
