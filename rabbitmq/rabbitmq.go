@@ -15,9 +15,16 @@ const (
 	maxBackoff     = 30 * time.Second // Maximum delay between retries
 )
 
-// ConnectToRabbitMQ connects to RabbitMQ with retry logic
-func ConnectToRabbitMQ(url string) *amqp091.Connection {
+// RabbitMQClient holds the RabbitMQ connection and channel
+type RabbitMQClient struct {
+	Connection *amqp091.Connection
+	Channel    *amqp091.Channel
+}
+
+// NewRabbitMQClient creates a new RabbitMQ client with retry logic
+func GetRabbitMQClient(url string) (*RabbitMQClient, error) {
 	var conn *amqp091.Connection
+	var ch *amqp091.Channel
 	var err error
 
 	for retries := 0; retries < maxRetries; retries++ {
@@ -36,12 +43,35 @@ func ConnectToRabbitMQ(url string) *amqp091.Connection {
 	}
 
 	if err != nil {
-		logger.Log.Fatal().Err(err).Msg("Failed to connect to RabbitMQ after multiple attempts")
+		return nil, err
 	}
 
-	return conn
+	// Create a new channel
+	ch, err = conn.Channel()
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
+
+	return &RabbitMQClient{
+		Connection: conn,
+		Channel:    ch,
+	}, nil
 }
 
+// Close cleans up the RabbitMQ connection and channel
+func (r *RabbitMQClient) Close() {
+	if r.Channel != nil {
+		if err := r.Channel.Close(); err != nil {
+			logger.Log.Error().Err(err).Msg("Failed to close RabbitMQ channel")
+		}
+	}
+	if r.Connection != nil {
+		if err := r.Connection.Close(); err != nil {
+			logger.Log.Error().Err(err).Msg("Failed to close RabbitMQ connection")
+		}
+	}
+}
 func PublishEvent(conn *amqp091.Connection, queueName string, eventPayload any) error {
 	channel, err := conn.Channel()
 	if err != nil {

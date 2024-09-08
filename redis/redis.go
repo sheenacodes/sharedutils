@@ -44,13 +44,13 @@ func GetRedisClient(addr string, pword string, database int) (*RedisClient, erro
 			if backoff > maxBackoff {
 				backoff = maxBackoff
 			}
-			logger.Log.Warn().Err(err).Msgf("Failed to connect to RabbitMQ, retrying in %v...", backoff)
+			logger.Log.Warn().Err(err).Msgf("Failed to connect to Redis, retrying in %v...", backoff)
 			time.Sleep(backoff)
 		}
 	}
 
 	//if err != nil {
-	logger.Log.Fatal().Err(err).Msg("Failed to connect to RabbitMQ after multiple attempts")
+	logger.Log.Fatal().Err(err).Msg("Failed to connect to Redis after multiple attempts")
 
 	return nil, fmt.Errorf("failed to connect to Redis after %d attempts: %v", maxRetries, err)
 	//}
@@ -66,7 +66,7 @@ func (r *RedisClient) IsSetNotEmpty(redisSetName string) (bool, error) {
 		return false, fmt.Errorf("error checking set size: %v", err)
 	}
 
-	logger.Log.Debug().Msgf("%d Vehicles in Redis Set", card)
+	logger.Log.Debug().Msgf("%d items available in Redis Set", card)
 	// Return true if the number of members is greater than 0
 	return card > 0, nil
 }
