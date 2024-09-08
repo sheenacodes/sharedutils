@@ -3,8 +3,9 @@ package redis
 import (
 	"context"
 	"fmt"
-	"generator/logger"
 	"time"
+
+	"github.com/sheenacodes/sharedutils/logger"
 
 	"github.com/redis/go-redis/v9"
 )

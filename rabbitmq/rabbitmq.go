@@ -2,11 +2,11 @@ package rabbitmq
 
 import (
 	"encoding/json"
-	"generator/logger"
 	"time"
 
+	"github.com/sheenacodes/sharedutils/logger"
+
 	"github.com/rabbitmq/amqp091-go"
-	//"github.com/rs/zerolog/log"
 )
 
 const (
