@@ -1,5 +1,7 @@
 package rabbitmq
 
+import "github.com/sheenacodes/sharedutils/logger"
+
 type Client interface {
 	ProcessMessage(msg []byte) error
 }
@@ -21,10 +23,8 @@ func (client *RabbitMQClient) ConsumeQueue(queueName string, handler Client) err
 
 	go func() {
 		for msg := range msgs {
-			//messageContent := string(msg.Body)
-			//TODO catch error here
 			if err := handler.ProcessMessage(msg.Body); err != nil {
-				// Handle error
+				logger.Log.Fatal().Err(err).Msg("Failed to process consumed message body ")
 			}
 		}
 	}()
