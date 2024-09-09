@@ -24,7 +24,7 @@ func (client *RabbitMQClient) ConsumeQueue(queueName string, handler Client) err
 	go func() {
 		for msg := range msgs {
 			if err := handler.ProcessMessage(msg.Body); err != nil {
-				logger.Log.Fatal().Err(err).Msg("Failed to process consumed message body ")
+				logger.Log.Error().Err(err).Msg("Failed to process consumed message body ")
 			}
 		}
 	}()
